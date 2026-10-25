@@ -1,9 +1,9 @@
 #!/bin/sh
-# Сборка прошивки BE7000 из исходников OpenWrt + патчей этого репозитория.
-# Требования: Linux (или WSL2), ~40 ГБ диска, пакеты для сборки OpenWrt:
+# 从 OpenWrt 源码 + 本仓库补丁构建 BE7000 固件。
+# 要求：Linux（或 WSL2）、约 40 GB 磁盘空间、OpenWrt 编译依赖包：
 #   https://openwrt.org/docs/guide-developer/toolchain/install-buildsystem
-# Использование: ./build.sh [каталог] [потоков]
-#   MINI=1 ./build.sh … — минимальный вариант (состав стокового OpenWrt + поддержка BE7000)
+# 用法：./build.sh [目录] [线程数]
+#   MINI=1 ./build.sh … — 最小版本（原版 OpenWrt 组成 + BE7000 支持）
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
 DIR=${1:-openwrt-be7000}
@@ -15,7 +15,7 @@ cd "$DIR"
 git checkout -q "$(rev openwrt)"
 git am -q "$HERE"/source/patches/*.patch
 
-# фиды — на тех же коммитах, что и релиз
+# 软件源 — 使用与发布版相同的提交
 cp feeds.conf.default feeds.conf
 for f in packages luci routing telephony video; do
 	sed -i "s|^\(src-git $f [^ ;^]*\).*|\1^$(rev $f)|" feeds.conf
@@ -29,6 +29,6 @@ rm -rf files && cp -a "$HERE/source/files$SFX" files
 cp "$HERE/source/diffconfig$SFX" .config
 make defconfig
 make download -j"$JOBS"
-# IGNORE_ERRORS=m: необязательные модули (kmod для фида), которые не собираются, пропускаются
+# IGNORE_ERRORS=m：编译不过的可选模块（给软件源用的 kmod）直接跳过
 make -j"$JOBS" IGNORE_ERRORS=m
 ls -la bin/targets/qualcommbe/ipq95xx/*factory.ubi
